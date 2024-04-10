@@ -23,16 +23,14 @@ const userSchema=new mongoose.Schema(
             required:[true,"Please Enter Password"],
             select:false,
         },
+
         avatar:{
-           
-              public_id:{
-                type:String,
-                required:true
-              },
-              url:{
-                type:String,
-                required:true
-              }
+            type:String,  //cloudinary url
+            required:true
+         },
+
+        coverImage:{
+            type:String,
         },
 
         role:{

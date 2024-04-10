@@ -21,7 +21,7 @@ const generateAceessAndRefreshToken=async(userId)=>{
 
 // register user
 const registerUsers=asyncHandler(async(req,res,)=>{
-    const {name,email,password,role}=req.body
+    const {name,email,password,role,}=req.body
 
     if(name==="" || email==="" || password===""){
         throw new ApiError(402,"these fields are required")
@@ -37,11 +37,24 @@ const registerUsers=asyncHandler(async(req,res,)=>{
    
    const avatarLocalPath=req.files?.avatar[0]?.path;
 
+   console.log(avatarLocalPath)
+
+   let coverImageLocalPath;
+
+    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0 ){
+        coverImageLocalPath=req.files.coverImage[0].path
+    }
+
+
    if(!avatarLocalPath){
       throw new ApiError(404,"avatar localfilePath is missing")
    }
 
    const avatar=await uploadOnCloudinary(avatarLocalPath)
+
+   console.log("avatar",avatar)
+
+   const coverImage=await uploadOnCloudinary(coverImageLocalPath)
 
    if(!avatar){
     throw new ApiError(500,"avatar file is not uploaded")
@@ -53,6 +66,7 @@ const registerUsers=asyncHandler(async(req,res,)=>{
        email:email.toLowerCase(),
        password,
        avatar:avatar.url,
+       coverImage:coverImage?.url || "",
        role
    })
 
@@ -61,16 +75,36 @@ const registerUsers=asyncHandler(async(req,res,)=>{
    }
 
    const {accessToken,refreshToken}=await generateAceessAndRefreshToken(user._id)
+   
    const options={
     httpOnly:true,
     secure:true
    }
 
-   return res
+   const message="You are Succeefully Register E-Learning Backend"
+   
+   try {
+
+    await sendEmail({
+        email:user.email,
+        subject:`E-LearningBackend Registration`,
+        message
+    })
+
+    return res
    .status(200)
    .cookie("AccessToken",accessToken,options)
    .cookie("RefreshToken",refreshToken,options)
    .json(new apiResponse(200,user,"User created Successfully"))
+    
+} catch (error) {
+    user.resetPasswordToken=undefined
+    user.resetPasswrodExpire=undefined
+    user.save({validateBeforeSave:false})
+    throw new ApiError(500,error.message)
+}
+
+   
 })
 
 // Login Users
@@ -174,7 +208,7 @@ const forgotPassword=asyncHandler(async(req,res,)=>{
 
         await sendEmail({
             email:user.email,
-            subject:`E-LearningBacken Password Recovery`,
+            subject:`E-LearningBackend Password Recovery`,
             message
         })
 
@@ -257,15 +291,32 @@ const updatePassword=asyncHandler(async(req,res)=>{
         throw new ApiError(500,"newPassword and confirmed password not same")
     }
      
-       user.password=newPassword                      
+   user.password=newPassword                      
                                                     
    await user.save()
-   await generateAceessAndRefreshToken(user._id)  
-    
-    return res.
-    status(200)
-    .json(new apiResponse(200,user,"password changed Successfully"))
+   await generateAceessAndRefreshToken(user._id)
+   
+   const message="Your E-LearningBacken Password Changed Successfully"
+   
+   try {
 
+    await sendEmail({
+        email:user.email,
+        subject:`E-LearningBackend Change Password`,
+        message
+    })
+
+    return res
+   .status(200)
+   .json(new apiResponse(200,user,"password changed Successfully"))
+
+} catch (error) {
+    user.resetPasswordToken=undefined
+    user.resetPasswrodExpire=undefined
+    user.save({validateBeforeSave:false})
+    throw new ApiError(500,error.message)
+}
+    
 })
 
 // update profile (personal)
