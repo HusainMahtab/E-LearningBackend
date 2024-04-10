@@ -12,11 +12,17 @@ const courseSchema = new mongoose.Schema({
     required: true
   },
 
-  duration: String,
-  instructor: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Instructor' // Reference to another model for instructors
+  categoury:{
+    type:String,
+    required:true
   },
+
+  lavel:{
+    type:String,
+    required:true
+  },
+
+  duration: String,
 
   modules: [{
     title: String,
@@ -42,33 +48,39 @@ const courseSchema = new mongoose.Schema({
     submissionDeadline: Date
   }],
 
-  prerequisites: [String],
-  price: Number,
+  price:{
+    type:Number,
+    required:true
+  },
+
+  ratings:{
+    type:Number,
+     default:0
+ },
 
   reviews: [{
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User' // Reference to another model for users
     },
-    
+
+    name:{
+        type:String,
+        required:true
+    },
+
     rating: {
       type: Number,
       min: 1,
       max: 5
     },
+
     comment: String
   }],
 
-
-  tags: [String],
-  status: {
-    type: String,
-    enum: ['draft', 'published', 'archived'],
-    default: 'draft'
-  }
 });
 
 // Create a Course model using the schema
-const Course = mongoose.model('Course', courseSchema);
+export const Course = mongoose.model('Course', courseSchema);
 
-module.exports = Course;
+

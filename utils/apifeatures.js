@@ -5,18 +5,30 @@ class Apifeatures{
     }
 
     //search features
-    search(){
-        const keyword=this.queryStr.keyword ? {
-            name:{
-                $regex:this.queryStr.keyword,
-                $options:"i"
-            }
-        } : {}
-
-        this.query=this.query.find({...keyword})
-
-        return this
+    search() {
+        const keyword = this.queryStr.keyword ? {
+            $or: [
+                { 
+                    title: { $regex: this.queryStr.keyword, $options: "i" } 
+                },
+                { 
+                    categoury: { $regex: this.queryStr.keyword, $options: "i" } 
+                },
+                { 
+                    lavel: { $regex: this.queryStr.keyword, $options: "i" } 
+                },
+                {
+                    duration:{$regex:this.queryStr.keyword,$options:"i"}
+                }
+            ]
+        } : {};
+    
+        this.query = this.query.find({ ...keyword });
+    
+        return this;
     }
+    
+    
 
     filter(){
         const queryCopy={...this.queryStr}

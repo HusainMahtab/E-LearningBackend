@@ -3,6 +3,7 @@ import {ApiError} from "../utils/apiError.js"
 import {apiResponse} from "../utils/apiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 import {sendEmail} from "../utils/sendEmail.js"
+import {uploadOnCloudinary} from "../utils/cloudinary.js";
 import crypto from "crypto"
 // Generate AccessToken and Refresh Token
 const generateAceessAndRefreshToken=async(userId)=>{
@@ -20,7 +21,7 @@ const generateAceessAndRefreshToken=async(userId)=>{
 
 // register user
 const registerUsers=asyncHandler(async(req,res,)=>{
-    const {name,email,password,avatar,role}=req.body
+    const {name,email,password,role}=req.body
 
     if(name==="" || email==="" || password===""){
         throw new ApiError(402,"these fields are required")
@@ -33,12 +34,25 @@ const registerUsers=asyncHandler(async(req,res,)=>{
    if(isuserExist){
     throw new ApiError(500,"User already exist")
    }
+   
+   const avatarLocalPath=req.files?.avatar[0]?.path;
+
+   if(!avatarLocalPath){
+      throw new ApiError(404,"avatar localfilePath is missing")
+   }
+
+   const avatar=await uploadOnCloudinary(avatarLocalPath)
+
+   if(!avatar){
+    throw new ApiError(500,"avatar file is not uploaded")
+   }
+   
 
    const user=await User.create({
        name,
        email:email.toLowerCase(),
        password,
-       avatar,
+       avatar:avatar.url,
        role
    })
 
@@ -56,7 +70,7 @@ const registerUsers=asyncHandler(async(req,res,)=>{
    .status(200)
    .cookie("AccessToken",accessToken,options)
    .cookie("RefreshToken",refreshToken,options)
-   .json(new apiResponse(200,{user,accessToken},"User created Successfully"))
+   .json(new apiResponse(200,user,"User created Successfully"))
 })
 
 // Login Users
